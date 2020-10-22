@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">	
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework> 
+  </PropertyGroup>
+	<Import Project="$(ProjectDir)../ExtToolCommon.props" />
+	<Import Project="$(ProjectDir)../NET20ExternalToolForm.targets" />
+	<ItemGroup>
+		<EmbeddedResource Include="icon_Hello.ico" />
+	</ItemGroup> 
+</Project>
