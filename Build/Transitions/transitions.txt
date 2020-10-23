@@ -1,0 +1,2 @@
+SoundAndGif "static.wav" "static.gif" 0.25
+SoundAndGif "static.wav" "static2.gif" 0.25

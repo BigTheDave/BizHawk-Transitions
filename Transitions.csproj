@@ -4,5 +4,8 @@
 	<ItemGroup> 
 		<PackageReference Include="System.Drawing.Common" Version="4.7.0" />
 		<EmbeddedResource Include="icon_Hello.ico" />
-	</ItemGroup> 
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(SolutionDir)Build\$(ProjectName).dll&quot;" />
+	</Target> 
 </Project>
