@@ -76,7 +76,6 @@ namespace HelloWorld
 					while (TransitionCache.Any(t => !t.Value.IsLoaded))
 					{ 
 						var currentTransition = TransitionCache.FirstOrDefault(t => t.Value.IsLoaded == false); 
-						currentTransition.Value.Load();
 						this.BeginInvoke(() =>
 						{
 							var totalLeft = TransitionCache.Count(t => !t.Value.IsLoaded);
@@ -85,6 +84,7 @@ namespace HelloWorld
 							pbLoading.Maximum = total;
 							pbLoading.Value = total - totalLeft;
 						});
+						currentTransition.Value.Load();
 						while (currentTransition.Value.IsLoaded == false)
 						{
 							Task.Delay(250);
