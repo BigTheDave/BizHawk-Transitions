@@ -57,23 +57,88 @@ namespace HelloWorld
 			foreach(var transition in transitions)
 			{
 				Log($"> '{transition[0]}': '{transition.Aggregate((a,b)=>$"{a},{b}")}'");
-				Transitions.Add(transition); 
+				Transitions.Add(transition);
+				GetTransition(transition);
+			}
+			//Precache
+			PrecacheTransitions();
+			UpdateUI(); 
+		}
+		void PrecacheTransitions()
+		{
+			pbLoading.Visible = true;
+			lblStatus.Text = "Precaching";
+			Task.Run(() =>
+			{
+				try
+				{ 
+					var total = TransitionCache.Count(t => !t.Value.IsLoaded);
+					while (TransitionCache.Any(t => !t.Value.IsLoaded))
+					{ 
+						var currentTransition = TransitionCache.FirstOrDefault(t => t.Value.IsLoaded == false); 
+						currentTransition.Value.Load();
+						this.BeginInvoke(() =>
+						{
+							var totalLeft = TransitionCache.Count(t => !t.Value.IsLoaded);
+							lblStatus.Text = $"Precaching '{currentTransition.Value.Name}'";
+							pbLoading.Minimum = 0;
+							pbLoading.Maximum = total;
+							pbLoading.Value = total - totalLeft;
+						});
+						while (currentTransition.Value.IsLoaded == false)
+						{
+							Task.Delay(250);
+						}
+						Task.Delay(100);
+					}
+					this.BeginInvoke(() =>
+					{
+						lblStatus.Text = "";
+						pbLoading.Visible = false;
+					});
+				}
+				catch (Exception ex)
+				{
+					Log(ex.Message);
+					throw;
+				}
+			});
+		}
+		void UpdateUI()
+		{
+			lbTransitions.Items.Clear();
+			foreach (var transition in TransitionCache)
+			{
+				lbTransitions.Items.Add(transition.Value);
 			}
 		}
+		private Dictionary<string, TransitionBase> TransitionCache = new Dictionary<string, TransitionBase>();
 		private TransitionBase GetTransition(params string[] args)
 		{
 			TransitionBase? transition = null;
-			switch (args[0])
+			string cacheTag = args.Aggregate((a,b)=> $"{a}_{b}");
+			if (TransitionCache.ContainsKey(cacheTag))
 			{
-				case "SoundAndGif":
-					float.TryParse(args[3], out var duration);
-					transition = new SoundAndGifTransition(args[1], args[2], duration);
-					break;
+				transition = TransitionCache[cacheTag];
+			}
+			else
+			{
+				switch (args[0])
+				{
+					case "SoundAndGif":
+						float.TryParse(args[3], out var duration);
+						transition = new SoundAndGifTransition(args[1], args[2], duration);
+						break;
+				}
+				if (transition != null)
+				{
+					transition.OnLog += (o, msg) => Log(msg);
+					TransitionCache.Add(cacheTag, transition);
+				}
 			}
 			if (transition != null)
 			{
 				transition.CanvasType = defaultCanvasType;
-				transition.OnLog += (o, msg) => Log(msg);
 			}
 			return transition;
 		}
@@ -81,8 +146,6 @@ namespace HelloWorld
 		private void ClientApi_StateLoaded(object sender, StateLoadedEventArgs e)
 		{
 			Log("ClientApi_StateLoaded");
-			ClientApi.SetSoundOn(true);
-			BeginTransition(); 
 			//CurrentTransition?.Start();
 			//ClientApi.Pause();
 		}
@@ -101,6 +164,7 @@ namespace HelloWorld
 		private void ClientApi_RomLoaded(object sender, EventArgs e)
 		{
 			Log("ROM Loaded");
+			BeginTransition();
 		}
 
 		/// <remarks>This is called once when the form is opened, and every time a new movie session starts.</remarks>
@@ -117,11 +181,11 @@ namespace HelloWorld
 		{ 
 			transition?.Update(_gui);
 		}
-		public Action UpdateTransition(int id)
+		public Action UpdateTransition(TransitionBase t)
 		{
-			Log($"Start UpdateTransition({id})");
+			Log($"Start UpdateTransition()");
 			//return () => { };
-			var t = GetTransition(Transitions[id]);
+			//var t = GetTransition(Transitions[id]);
 			CurrentTransition = t;
 			var start = DateTime.Now;
 			ClientApi.Pause();
@@ -140,7 +204,7 @@ namespace HelloWorld
 					{
 						DoScreenUpdate(t);
 						Task.Delay(33);
-						if (DateTime.Now - start > TimeSpan.FromSeconds(5))
+						if (DateTime.Now - start > TimeSpan.FromSeconds(10))
 						{
 							Log("ERROR: TRANSITION WENT ON TOO LONG");
 							break;
@@ -155,6 +219,7 @@ namespace HelloWorld
 					Log("End UpdateTransition()");
 					ClientApi.Unpause();
 					CurrentTransition = null;
+					ClientApi.SetSoundOn(true);
 				}
 			};
 		}
@@ -175,11 +240,11 @@ namespace HelloWorld
 
 		private void btnTransitionSimple_Click(object sender, EventArgs e)
 		{
-			BeginTransition(); 
+			BeginTransition((lbTransitions.SelectedItem as TransitionBase));
 		}
-		private void BeginTransition()
+		private void BeginTransition(TransitionBase? transition = null)
 		{ 
-			Task.Run(UpdateTransition(random.Next(0, Transitions.Count))); 
+			Task.Run(UpdateTransition(transition ?? GetTransition(Transitions[random.Next(0, Transitions.Count)]))); 
 		} 
 
 		private void toolStripButton1_Click(object sender, EventArgs e)

@@ -20,6 +20,7 @@ namespace Transitions.Transitions
 			Native
 		}
 		private EmuCanvasType mCanvasType;
+		public abstract string Name { get; }
 		public EmuCanvasType CanvasType
 		{
 			get
@@ -44,7 +45,8 @@ namespace Transitions.Transitions
 		protected float mDuration;
 		public int ScreenWidth => (CanvasType == EmuCanvasType.Emu) ? ClientApi.BufferWidth() : ClientApi.ScreenWidth();
 		public int ScreenHeight => (CanvasType == EmuCanvasType.Emu) ? ClientApi.BufferHeight() : ClientApi.ScreenHeight();
-		public bool IsPlaying { get; private set; } 
+		public bool IsPlaying { get; private set; }
+		public bool IsLoaded { get; protected set; }
 		protected void Log(string msg)
 		{
 			OnLog?.Invoke(this, msg);

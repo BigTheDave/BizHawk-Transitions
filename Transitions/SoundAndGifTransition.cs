@@ -17,19 +17,23 @@ namespace Transitions.Transitions
 		private AnimatedGif? Gif;
 		private IGuiApi? mGui { get; set; }
 
+		private string mName;
+		public override string Name => mName;
+
 		private SoundPlayer mPlayer;
-		private bool IsLoaded = false;
 		private string mSound;
 		private string mAnimation;
 
 		public SoundAndGifTransition(string sound, string animation, float duration) : base(duration)
 		{
+			mName = $"{animation}/{sound}";
 			mSound = sound;
 			mAnimation = animation;
 			OnTransitionStart += (o, e) =>
 			{
 				if (!IsLoaded) Load();
-				mPlayer.Play();
+				Gif.CurrentTime = 0;
+				mPlayer.Play();				
 			};
 		}
 		public override void Load() { 
@@ -41,6 +45,7 @@ namespace Transitions.Transitions
 				mGui.DrawFinish();
 			};
 			mPlayer = new SoundPlayer(Path.Combine(CommonUtilities.RootDirectory, mSound));
+			mPlayer.LoadAsync();
 			mDuration = Math.Max(mDuration, (Gif?.Duration /1000f) ?? 2);
 			IsLoaded = true;
 		}

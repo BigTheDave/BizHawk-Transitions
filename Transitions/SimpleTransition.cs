@@ -13,7 +13,8 @@ namespace Transitions.Transitions
 	public class SimpleTransition : TransitionBase
 	{
 		private IGuiApi? mGui { get; set; }
-		
+		public override string Name => "SimpleTransition";
+
 		public SimpleTransition(float duration) : base(duration)
 		{
 			OnTransitionStart += (o, e) => new SoundPlayer(Path.Combine(CommonUtilities.RootDirectory,"batman.wav")).Play();
