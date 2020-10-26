@@ -38,6 +38,7 @@ namespace HelloWorld
 		private Random random = new Random();
 		public CustomMainForm()
 		{
+			Instance = this;
 			InitializeComponent();
 		}
 		public void UpdateValues(ToolFormUpdateType type)
@@ -132,7 +133,6 @@ namespace HelloWorld
 				}
 				if (transition != null)
 				{
-					transition.OnLog += (o, msg) => Log(msg);
 					TransitionCache.Add(cacheTag, transition);
 				}
 			}
@@ -154,6 +154,8 @@ namespace HelloWorld
 		{
 			Log("Before Quick Save");
 			ClientApi.SetSoundOn(false);
+			CurrentTransition = GetTransition(Transitions[random.Next(0, Transitions.Count)]);
+			PrepareTransition(CurrentTransition);
 		}
 
 		private void ClientApi_BeforeQuickLoad(object sender, BeforeQuickLoadEventArgs e)
@@ -164,7 +166,8 @@ namespace HelloWorld
 		private void ClientApi_RomLoaded(object sender, EventArgs e)
 		{
 			Log("ROM Loaded");
-			BeginTransition();
+			CurrentTransition = CurrentTransition ?? GetTransition(Transitions[random.Next(0, Transitions.Count)]);
+			BeginTransition(CurrentTransition);
 		}
 
 		/// <remarks>This is called once when the form is opened, and every time a new movie session starts.</remarks>
@@ -191,10 +194,12 @@ namespace HelloWorld
 			ClientApi.Pause();
 			if (t == null) throw new NullReferenceException("Transition cannot be null ya daftie");
 			Log("t.Start()");
-			_gui.DrawNew("emu", true);
-			_gui.DrawRectangle(0, 0, ClientApi.BufferWidth(), ClientApi.BufferHeight());
+			_gui.DrawNew("native", true);
+			_gui.SetDefaultBackgroundColor(Color.Black);
+			_gui.SetDefaultForegroundColor(Color.Black);
+			_gui.DrawRectangle(0, 0, ClientApi.ScreenWidth(), ClientApi.ScreenHeight());
 			_gui.DrawFinish();
-			t.Start();
+			t.Start(); 
 			DoScreenUpdate(t);
 			return () =>
 			{
@@ -202,7 +207,23 @@ namespace HelloWorld
 				{
 					do
 					{
-						DoScreenUpdate(t);
+						Task.Delay(33);
+						if (DateTime.Now - start > TimeSpan.FromSeconds(1))
+						{
+							Log("ERROR: TRANSITION PREP WENT ON TOO LONG");
+							break;
+						}
+					} while (TransitionReady != TransitioningState.Ready);
+
+					_gui.DrawNew("native", true);
+					_gui.DrawFinish();
+
+					do
+					{
+						if (TransitionReady == TransitioningState.Ready)
+						{
+							DoScreenUpdate(t);
+						} 
 						Task.Delay(33);
 						if (DateTime.Now - start > TimeSpan.FromSeconds(10))
 						{
@@ -217,6 +238,8 @@ namespace HelloWorld
 				} finally
 				{
 					Log("End UpdateTransition()");
+					_gui.DrawNew("native", true); 
+					_gui.DrawFinish();
 					ClientApi.Unpause();
 					CurrentTransition = null;
 					ClientApi.SetSoundOn(true);
@@ -230,10 +253,10 @@ namespace HelloWorld
 		}
 
 		StringBuilder log = new StringBuilder();
-		public void Log(string line)
-		{
-			log.Insert(0,$"{line}\r\n");
-			txtLog.Text = log.ToString();
+		private static CustomMainForm Instance;
+		public static void Log(string line) {
+			Instance.log.Insert(0,$"{line}\r\n");
+			Instance.Invalidate();
 		}
 
 		public bool AskSaveChanges() => true;
@@ -242,9 +265,24 @@ namespace HelloWorld
 		{
 			BeginTransition((lbTransitions.SelectedItem as TransitionBase));
 		}
-		private void BeginTransition(TransitionBase? transition = null)
+		private enum TransitioningState
+		{
+			Preparing, Ready
+		}
+		private TransitioningState TransitionReady = TransitioningState.Ready; 
+		private void PrepareTransition(TransitionBase transition)
+		{
+			TransitionReady =  TransitioningState.Preparing;
+			ClientApi.Pause();
+			Task.Run(() =>
+			{
+				Task.Delay(250);
+				TransitionReady = TransitioningState.Ready;
+			});
+		}
+		private void BeginTransition(TransitionBase transition)
 		{ 
-			Task.Run(UpdateTransition(transition ?? GetTransition(Transitions[random.Next(0, Transitions.Count)]))); 
+			Task.Run(UpdateTransition(transition)); 
 		} 
 
 		private void toolStripButton1_Click(object sender, EventArgs e)
@@ -269,6 +307,11 @@ namespace HelloWorld
 					defaultCanvasType = TransitionBase.EmuCanvasType.Native;
 					break;
 			}
+		}
+
+		private void CustomMainForm_Paint(object sender, PaintEventArgs e)
+		{ 			
+			txtLog.Text = Instance.log.ToString();
 		}
 	}
 }

@@ -34,7 +34,6 @@
             this.btnTransitionSimple = new System.Windows.Forms.ToolStripButton();
             this.lblInfo = new System.Windows.Forms.ToolStripLabel();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
-            this.toolStripComboBox1 = new System.Windows.Forms.ToolStripComboBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabTransitions = new System.Windows.Forms.TabPage();
             this.tabLog = new System.Windows.Forms.TabPage();
@@ -87,11 +86,10 @@
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnTransitionSimple,
             this.lblInfo,
-            this.toolStripButton1,
-            this.toolStripComboBox1});
+            this.toolStripButton1});
             this.toolStrip1.Location = new System.Drawing.Point(3, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(276, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(184, 25);
             this.toolStrip1.TabIndex = 0;
             // 
             // btnTransitionSimple
@@ -116,19 +114,6 @@
             this.toolStripButton1.Size = new System.Drawing.Size(61, 22);
             this.toolStripButton1.Text = "Clear Log";
             this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
-            // 
-            // toolStripComboBox1
-            // 
-            this.toolStripComboBox1.AutoCompleteCustomSource.AddRange(new string[] {
-            "Emu",
-            "Native"});
-            this.toolStripComboBox1.Items.AddRange(new object[] {
-            "Emu",
-            "Native"});
-            this.toolStripComboBox1.Name = "toolStripComboBox1";
-            this.toolStripComboBox1.Size = new System.Drawing.Size(121, 25);
-            this.toolStripComboBox1.Click += new System.EventHandler(this.toolStripComboBox1_Click);
-            this.toolStripComboBox1.TextChanged += new System.EventHandler(this.toolStripComboBox1_TextChanged);
             // 
             // tabControl1
             // 
@@ -207,6 +192,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Transitions";
             this.Load += new System.EventHandler(this.CustomMainForm_Load);
+            this.Paint += new System.Windows.Forms.PaintEventHandler(this.CustomMainForm_Paint);
             this.toolStripContainer1.ContentPanel.ResumeLayout(false);
             this.toolStripContainer1.TopToolStripPanel.ResumeLayout(false);
             this.toolStripContainer1.TopToolStripPanel.PerformLayout();
@@ -233,7 +219,6 @@
 		private System.Windows.Forms.ToolStripButton btnTransitionSimple;
 		private System.Windows.Forms.ToolStripLabel lblInfo;
 		private System.Windows.Forms.ToolStripButton toolStripButton1;
-		private System.Windows.Forms.ToolStripComboBox toolStripComboBox1;
 		private System.Windows.Forms.TabControl tabControl1;
 		private System.Windows.Forms.TabPage tabTransitions;
 		private System.Windows.Forms.TabPage tabLog;

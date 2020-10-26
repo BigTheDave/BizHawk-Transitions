@@ -28,15 +28,22 @@ namespace Transitions.Transitions
 				Log("GUI is null");
 				return;
 			}
-			mGui.SetDefaultBackgroundColor(Color.Black);
-			mGui.SetDefaultForegroundColor(Color.Black);
-			mGui.DrawNew("emu",true);
 			mGui.DrawRectangle(0, 0, ScreenWidth, CommonUtilities.Lerp(0, ScreenHeight, T));
-			mGui.DrawFinish();
 		}
 
 		public override void Load()
 		{ 
 		}
+
+		protected override void DrawEnd(IGuiApi? gui)
+		{
+			mGui.DrawFinish();
+		}
+		protected override void DrawStart(IGuiApi? gui)
+		{
+			mGui.SetDefaultBackgroundColor(Color.Black);
+			mGui.SetDefaultForegroundColor(Color.Black);
+			mGui.DrawNew(CanvasName, true); 
+		} 
 	}
 }

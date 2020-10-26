@@ -36,6 +36,7 @@ namespace Transitions.Transitions
 				mPlayer.Play();				
 			};
 		}
+		public override string CanvasName => "emu";
 		public override void Load() { 
 			Gif = AnimatedGif.LoadFromFile(Path.Combine(CommonUtilities.RootDirectory, mAnimation));
 			OnTransitionEnd += (o, e) =>
@@ -52,24 +53,34 @@ namespace Transitions.Transitions
 
 		protected override void Draw(IGuiApi? gui, float T, float dt)
 		{
-			mGui = gui;
-			if (mGui == null)
-			{
-				Log("GUI is null");
-				return;
-			}
-			mGui.SetDefaultBackgroundColor(Color.Black);
-			mGui.SetDefaultForegroundColor(Color.Black);
-			mGui.DrawNew(CanvasName, true);
-			mGui.DrawRectangle(0, 0, ScreenWidth,ScreenHeight);
 			if (Gif != null )
 			{
 				var image = Gif.Update(dt * 1000);
-				var xOffset = (ScreenWidth - image.Width)/2;
-				var yOffset = (ScreenHeight - image.Height)/2;
-				mGui.DrawImage(image, xOffset, yOffset);
-			}
-			mGui.DrawFinish();
-		} 
+				var aspect = image.Width / (float)image.Height;
+				var screenW = (int)(ScreenHeight * aspect);
+				var screenH = ScreenHeight;
+				var xOffset = (ScreenWidth - screenW) /2;
+				var yOffset = (ScreenHeight - screenH) /2;
+				gui.DrawImageRegion(image, 0, 0,image.Width,image.Height, xOffset, yOffset, screenW, screenH);
+			} 
+		}
+
+		protected override void DrawEnd(IGuiApi? gui)
+		{
+			gui.DrawFinish();
+		}
+		protected override void DrawStart(IGuiApi? gui)
+		{
+			mGui = gui;
+			if (gui == null)
+			{
+				Log("GUI is null");
+				return;
+			} 
+			gui.SetDefaultBackgroundColor(Color.Black);
+			gui.SetDefaultForegroundColor(Color.Black); 
+			gui.DrawNew(CanvasName, true);
+			gui.DrawRectangle(0, 0, ScreenWidth, ScreenHeight);
+		}
 	}
 }

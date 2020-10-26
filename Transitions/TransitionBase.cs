@@ -37,9 +37,8 @@ namespace Transitions.Transitions
 			}
 		}
 		private string mCanvasName;
-		public string CanvasName => string.IsNullOrWhiteSpace(mCanvasName) ? (mCanvasName = CanvasType == EmuCanvasType.Emu ? "emu" : "native") : mCanvasName;
-		public event EventHandler? OnTransitionStart,OnTransitionMidpoint,OnTransitionEnd; 
-		public event EventHandler<string>? OnLog;
+		public virtual string CanvasName => string.IsNullOrWhiteSpace(mCanvasName) ? (mCanvasName = CanvasType == EmuCanvasType.Emu ? "emu" : "native") : mCanvasName;
+		public event EventHandler? OnTransitionStart,OnTransitionMidpoint,OnTransitionEnd;  
 		public float T { get; protected set; } = 0;
 		protected float mDeltaTime = 0.0166666f;
 		protected float mDuration;
@@ -49,16 +48,18 @@ namespace Transitions.Transitions
 		public bool IsLoaded { get; protected set; }
 		protected void Log(string msg)
 		{
-			OnLog?.Invoke(this, msg);
+
+			HelloWorld.CustomMainForm.Log($"{this.GetType().Name} => '{msg}'");
 		}
 		private long _dt;
 		public TransitionBase(float Duration)
 		{
 			mDuration = Duration;
 			_dt = DateTime.Now.Ticks;
-			CanvasType = EmuCanvasType.Emu;			
+			CanvasType = EmuCanvasType.Native;			
 		}
 		public abstract void Load();
+		
 		public virtual void Start()
 		{
 			Log("Start");
@@ -73,26 +74,42 @@ namespace Transitions.Transitions
 			IsPlaying = false;
 			 T = 0;
 			OnTransitionEnd?.Invoke(this, null);
-		}
+		} 
 		protected abstract void Draw(IGuiApi? gui, float T, float dT);
+		protected abstract void DrawStart(IGuiApi? gui);
+		protected abstract void DrawEnd(IGuiApi? gui);
 		public void Update(IGuiApi? gui)
 		{
-			if (!IsPlaying)
+			if (gui == null) return;
+			try
 			{
-				Log("Stopped");
-				return;
-			}
+				DrawStart(gui);
+				if (!IsPlaying)
+				{
+					Log("Stopped");
+					DrawEnd(gui);
+					return;
+				}
 
-			mDeltaTime = (DateTime.Now.Ticks - _dt) / (float)TimeSpan.TicksPerSecond;
-			_dt = DateTime.Now.Ticks;
+				mDeltaTime = (DateTime.Now.Ticks - _dt) / (float)TimeSpan.TicksPerSecond;
+				_dt = DateTime.Now.Ticks;
 
-			T += (mDeltaTime / mDuration);
-			Draw(gui, (T > 1) ? 1 : (T < 0) ? 0 : T, mDeltaTime);
+				T += (mDeltaTime / mDuration);
+				Draw(gui, (T > 1) ? 1 : (T < 0) ? 0 : T, mDeltaTime);
 
-			if (T >= 1)
+				if (T >= 1)
+				{
+					Log("End of Transition");
+					Stop();
+				}
+			} catch(Exception ex)
 			{
-				Log("End of Transition");
-				Stop();
+				Log(ex.StackTrace);
+				Log(ex.Message);
+
+			} finally
+			{
+				DrawEnd(gui);
 			}
 		}
 	}
