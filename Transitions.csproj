@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+	  <Version>1.1.0</Version>
+	</PropertyGroup>
 	<Import Project="$(ProjectDir)../ExtToolCommon.props" />
 	<Import Project="$(ProjectDir)../NET48ExternalToolForm.targets" />
 	<ItemGroup> 
