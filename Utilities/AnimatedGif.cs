@@ -20,18 +20,22 @@ namespace Transitions.Utilities
 		{
 			Frames.Add(new AnimationFrame(image, duration));
 		}
-		public Image Update(float deltaTime)
+		public Image Get(float time)
 		{
-			CurrentTime += deltaTime;
-			if (Loop) CurrentTime %= Duration;
-			else if (CurrentTime > Duration) CurrentTime = Duration;
+			if (Loop) time %= Duration;
+			else if (time > Duration) time = Duration;
 			int t = 0;
-			foreach(var frame in Frames)
+			foreach (var frame in Frames)
 			{
 				t += frame.Duration;
-				if (t >= CurrentTime) return frame.Image;
+				if (t >= time) return frame.Image;
 			}
-			throw new Exception($"Current Time {CurrentTime} is greater than Duration {Duration}");
+			throw new Exception($"Time '{time}' is greater than Duration '{Duration}'");
+		}
+		public Image Update(float deltaTime)
+		{
+			CurrentTime += deltaTime; 
+			return Get(CurrentTime);
 		}
 		public class AnimationFrame
 		{
@@ -77,6 +81,17 @@ namespace Transitions.Utilities
 				gif.Loop = BitConverter.ToInt16(image.GetPropertyItem(20737).Value, 0) != 1;
 				return gif;
 			}
+		}
+
+		public static async Task<AnimatedGif?> LoadFromFileAsync(string path)
+		{
+			var gif = new AnimatedGif();
+			await Task.Run(() =>
+			{
+				gif = LoadFromFile(path);
+			}
+			);
+			return gif;
 		}
 	}
 }

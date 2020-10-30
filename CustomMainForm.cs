@@ -8,14 +8,14 @@ using BizHawk.Emulation.Common;
 using System.Data;
 using System.Drawing;
 using System.Threading.Tasks;
-using System.Text;
-using Transitions.Transitions;
+using System.Text; 
 using System.Media;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Transitions;
 using Transitions.Utilities;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace HelloWorld
 {
@@ -29,13 +29,15 @@ namespace HelloWorld
 		[RequiredService]
 		private IEmulator? _emu { get; set; }
 		[RequiredApi]
-		private IGuiApi? _gui { get; set; }
+		private IGuiApi? _gui { get; set; } 
 		[RequiredApi]
 		private IEmuClientApi? _emuClient { get; set; }
 
-		private List<string[]> Transitions = new List<string[]>();
-		private TransitionBase? CurrentTransition { get; set; } = null;
-		private Random random = new Random();
+		TransitionLibrary? mTransitionLibrary;
+		TransitionLibrary TransitionLibrary => mTransitionLibrary ??= new TransitionLibrary();
+
+		TransitionHandler? currentTransitionHandler;
+
 		public CustomMainForm()
 		{
 			Instance = this;
@@ -43,120 +45,67 @@ namespace HelloWorld
 		}
 		public void UpdateValues(ToolFormUpdateType type)
 		{ 
-			switch (type)
-			{
-				case ToolFormUpdateType.PostFrame:
-					//DoScreenUpdate();
-					//lblInfo.Text = $"Playing:{CurrentTransition?.IsPlaying}, {CurrentTransition?.CanvasName}, {CurrentTransition?.T}";
-					break;
-			}
 		}
-		public void LoadTransitions() {
-			
-			var transitions = ConfigParser.Parse(Path.Combine(CommonUtilities.RootDirectory, "transitions.txt"));
-			Log($"Found {transitions.Count} Transitions");
-			foreach(var transition in transitions)
-			{
-				Log($"> '{transition[0]}': '{transition.Aggregate((a,b)=>$"{a},{b}")}'");
-				Transitions.Add(transition);
-				GetTransition(transition);
-			}
-			//Precache
-			PrecacheTransitions();
-			UpdateUI(); 
-		}
-		void PrecacheTransitions()
+		public void LoadTransitions()
 		{
-			pbLoading.Visible = true;
-			lblStatus.Text = "Precaching";
-			Task.Run(() =>
+			TransitionLibrary.LoadProgress += (o, e) =>
 			{
-				try
-				{ 
-					var total = TransitionCache.Count(t => !t.Value.IsLoaded);
-					while (TransitionCache.Any(t => !t.Value.IsLoaded))
-					{ 
-						var currentTransition = TransitionCache.FirstOrDefault(t => t.Value.IsLoaded == false); 
-						this.BeginInvoke(() =>
-						{
-							var totalLeft = TransitionCache.Count(t => !t.Value.IsLoaded);
-							lblStatus.Text = $"Precaching '{currentTransition.Value.Name}'";
-							pbLoading.Minimum = 0;
-							pbLoading.Maximum = total;
-							pbLoading.Value = total - totalLeft;
-						});
-						currentTransition.Value.Load();
-						while (currentTransition.Value.IsLoaded == false)
-						{
-							Task.Delay(250);
-						}
-						Task.Delay(100);
-					}
-					this.BeginInvoke(() =>
-					{
-						lblStatus.Text = "";
-						pbLoading.Visible = false;
-					});
-				}
-				catch (Exception ex)
+				this.Invoke(() =>
 				{
-					Log(ex.Message);
-					throw;
-				}
+					Log($"TransitionLibrary Progress {e.Current}/{e.Maximum} => {e.Status}");
+					pbLoading.Visible = true;
+					pbLoading.Maximum = e.Maximum;
+					pbLoading.Value = e.Current;
+					lblStatus.Text = e.Status;
+				});
+			};
+			TransitionLibrary.LoadComplete += (o, e) =>
+			{
+				this.Invoke(() =>
+				{
+					Log("TransitionLibrary LoadComplete");
+					pbLoading.Visible = false;
+					lblStatus.Text = "";
+				});
+			};
+			TransitionLibrary.ListReady += (o, e) =>
+			{
+				this.Invoke(() =>
+				{
+					Log("TransitionLibrary ListReady");
+					UpdateUI();
+				});
+			};
+			Task.Run(async () => {
+				Log($"Loading Transitions");
+				await TransitionLibrary.LoadLibraryAsync(Path.Combine(CommonUtilities.RootDirectory, "transitions.txt"),true); 
 			});
 		}
 		void UpdateUI()
 		{
 			lbTransitions.Items.Clear();
-			foreach (var transition in TransitionCache)
+			foreach (var transition in TransitionLibrary.TransitionCache)
 			{
 				lbTransitions.Items.Add(transition.Value);
 			}
 		}
-		private Dictionary<string, TransitionBase> TransitionCache = new Dictionary<string, TransitionBase>();
-		private TransitionBase GetTransition(params string[] args)
-		{
-			TransitionBase? transition = null;
-			string cacheTag = args.Aggregate((a,b)=> $"{a}_{b}");
-			if (TransitionCache.ContainsKey(cacheTag))
-			{
-				transition = TransitionCache[cacheTag];
-			}
-			else
-			{
-				switch (args[0])
-				{
-					case "SoundAndGif":
-						float.TryParse(args[3], out var duration);
-						transition = new SoundAndGifTransition(args[1], args[2], duration);
-						break;
-				}
-				if (transition != null)
-				{
-					TransitionCache.Add(cacheTag, transition);
-				}
-			}
-			if (transition != null)
-			{
-				transition.CanvasType = defaultCanvasType;
-			}
-			return transition;
-		}
-
 		private void ClientApi_StateLoaded(object sender, StateLoadedEventArgs e)
 		{
 			Log("ClientApi_StateLoaded");
-			//CurrentTransition?.Start();
-			//ClientApi.Pause();
+			if(currentTransitionHandler == null)
+			{
+				PrepareTransition(TransitionLibrary.GetNext());
+				currentTransitionHandler.IsROMReady = true;
+			}
 		}
 
 		private void ClientApi_BeforeQuickSave(object sender, BeforeQuickSaveEventArgs e)
 		{
 			Log("Before Quick Save");
-			ClientApi.SetSoundOn(false);
-			CurrentTransition = GetTransition(Transitions[random.Next(0, Transitions.Count)]);
-			PrepareTransition(CurrentTransition);
+			//Prepare new Transition
+			PrepareTransition(TransitionLibrary.GetNext());
 		}
+
 
 		private void ClientApi_BeforeQuickLoad(object sender, BeforeQuickLoadEventArgs e)
 		{
@@ -166,8 +115,11 @@ namespace HelloWorld
 		private void ClientApi_RomLoaded(object sender, EventArgs e)
 		{
 			Log("ROM Loaded");
-			CurrentTransition = CurrentTransition ?? GetTransition(Transitions[random.Next(0, Transitions.Count)]);
-			BeginTransition(CurrentTransition);
+			//Begin new Random Transition
+			if (currentTransitionHandler != null)
+			{
+				currentTransitionHandler.IsROMReady = true;
+			}
 		}
 
 		/// <remarks>This is called once when the form is opened, and every time a new movie session starts.</remarks>
@@ -177,76 +129,14 @@ namespace HelloWorld
 			_emuClient.RomLoaded += ClientApi_RomLoaded;
 			_emuClient.BeforeQuickLoad += ClientApi_BeforeQuickLoad;
 			_emuClient.BeforeQuickSave += ClientApi_BeforeQuickSave;
+			if (currentTransitionHandler != null)
+			{
+				currentTransitionHandler.gui = _gui;
+			}
 			Log("Ready...");
 		}
 
-		public void DoScreenUpdate(TransitionBase transition)
-		{ 
-			transition?.Update(_gui);
-		}
-		public Action UpdateTransition(TransitionBase t)
-		{
-			Log($"Start UpdateTransition()");
-			//return () => { };
-			//var t = GetTransition(Transitions[id]);
-			CurrentTransition = t;
-			var start = DateTime.Now;
-			ClientApi.Pause();
-			if (t == null) throw new NullReferenceException("Transition cannot be null ya daftie");
-			Log("t.Start()");
-			_gui.DrawNew("native", true);
-			_gui.SetDefaultBackgroundColor(Color.Black);
-			_gui.SetDefaultForegroundColor(Color.Black);
-			_gui.DrawRectangle(0, 0, ClientApi.ScreenWidth(), ClientApi.ScreenHeight());
-			_gui.DrawFinish();
-			t.Start(); 
-			DoScreenUpdate(t);
-			return () =>
-			{
-				try
-				{
-					do
-					{
-						Task.Delay(33);
-						if (DateTime.Now - start > TimeSpan.FromSeconds(1))
-						{
-							Log("ERROR: TRANSITION PREP WENT ON TOO LONG");
-							break;
-						}
-					} while (TransitionReady != TransitioningState.Ready);
-
-					_gui.DrawNew("native", true);
-					_gui.DrawFinish();
-
-					do
-					{
-						if (TransitionReady == TransitioningState.Ready)
-						{
-							DoScreenUpdate(t);
-						} 
-						Task.Delay(33);
-						if (DateTime.Now - start > TimeSpan.FromSeconds(10))
-						{
-							Log("ERROR: TRANSITION WENT ON TOO LONG");
-							break;
-						}
-					} while (t.IsPlaying);
-				} catch(Exception ex)
-				{
-					Log(ex.StackTrace);
-					Log(ex.Message);
-				} finally
-				{
-					Log("End UpdateTransition()");
-					_gui.DrawNew("native", true); 
-					_gui.DrawFinish();
-					ClientApi.Unpause();
-					CurrentTransition = null;
-					ClientApi.SetSoundOn(true);
-				}
-			};
-		}
-
+		
 		private void CustomMainForm_Load(object sender, EventArgs e)
 		{
 			LoadTransitions();
@@ -261,29 +151,28 @@ namespace HelloWorld
 
 		public bool AskSaveChanges() => true;
 
+		private void PrepareTransition(TransitionData transitionData)
+		{
+			Log($"PrepareTransition {transitionData}");
+			currentTransitionHandler?.Stop();
+			currentTransitionHandler = new TransitionHandler(transitionData);
+			currentTransitionHandler.gui = _gui;
+			currentTransitionHandler.InvokeOnMainThread += (o, e) =>
+			{
+				this.Invoke(e);
+			};
+			currentTransitionHandler.PlayAsync(); 
+			currentTransitionHandler.TransitionCompleted += (o, e) =>
+			{
+				if (currentTransitionHandler == o) currentTransitionHandler = null;
+			};
+		}
 		private void btnTransitionSimple_Click(object sender, EventArgs e)
 		{
-			BeginTransition((lbTransitions.SelectedItem as TransitionBase));
+			Log($"Test Transition {lbTransitions.SelectedItem}");
+			PrepareTransition((lbTransitions.SelectedItem as TransitionData));
+			currentTransitionHandler.IsROMReady = true;
 		}
-		private enum TransitioningState
-		{
-			Preparing, Ready
-		}
-		private TransitioningState TransitionReady = TransitioningState.Ready; 
-		private void PrepareTransition(TransitionBase transition)
-		{
-			TransitionReady =  TransitioningState.Preparing;
-			ClientApi.Pause();
-			Task.Run(() =>
-			{
-				Task.Delay(250);
-				TransitionReady = TransitioningState.Ready;
-			});
-		}
-		private void BeginTransition(TransitionBase transition)
-		{ 
-			Task.Run(UpdateTransition(transition)); 
-		} 
 
 		private void toolStripButton1_Click(object sender, EventArgs e)
 		{
@@ -294,19 +183,6 @@ namespace HelloWorld
 		private void toolStripComboBox1_Click(object sender, EventArgs e)
 		{
 
-		}
-		TransitionBase.EmuCanvasType defaultCanvasType = TransitionBase.EmuCanvasType.Emu;
-		private void toolStripComboBox1_TextChanged(object sender, EventArgs e)
-		{
-			switch((sender as ToolStripComboBox).Text.ToLower())
-			{
-				case "emu":
-					defaultCanvasType = TransitionBase.EmuCanvasType.Emu;
-					break;
-				case "native":
-					defaultCanvasType = TransitionBase.EmuCanvasType.Native;
-					break;
-			}
 		}
 
 		private void CustomMainForm_Paint(object sender, PaintEventArgs e)
