@@ -17,18 +17,26 @@ namespace Transitions
 	public class SoundAndGifTransitionData : TransitionData
 	{
 		private SoundPlayer mPlayer;
-		private AnimatedGif? mGif;
+		private AnimatedGif? mGif; 
 		private readonly string mSound;
 		private readonly string mAnimation;
+		public override string Preview => Path.Combine(CommonUtilities.RootDirectory, mAnimation);
 
-		public override string Name => $"SoundGif {mSound}";
+		public override string Name => $"SoundGif {mSound} {((Count > 1) ? $"(x{Count})":string.Empty)}";
 		public override string Key => $"SoundGif{mSound}{mAnimation}";
 
 		public SoundAndGifTransitionData(string sound, string animation, float duration) : base(duration)
 		{
 			this.mAnimation = animation;
 			this.mSound = sound;
-			this.mPlayer = new SoundPlayer(Path.Combine(CommonUtilities.RootDirectory, mSound));
+
+			var soundPath = Path.Combine(CommonUtilities.RootDirectory, mSound);
+			var soundFile = new FileInfo(soundPath);
+			var animPath = Path.Combine(CommonUtilities.RootDirectory, mAnimation);
+			var animFile = new FileInfo(animPath); 
+			SetInfo("Animation", $"{animation} ({animFile.Length / 1024f:0.#}kb)");
+			SetInfo("Sound", $"{sound} ({soundFile.Length/1024f:0.#}kb)");
+			this.mPlayer = new SoundPlayer(soundPath);
 		}
 		public override void Draw(IGuiApi gui, double t)
 		{
@@ -50,9 +58,8 @@ namespace Transitions
 		}
 
 		public override void Stop()
-		{
-			mPlayer.Stop();
-		}
+		{ 
+		} 
 		public override async Task PreloadAsync()
 		{
 			IsLoadCompleted = false;
@@ -67,8 +74,11 @@ namespace Transitions
 			Task<AnimatedGif?> loadGif = AnimatedGif.LoadFromFileAsync(Path.Combine(CommonUtilities.RootDirectory, mAnimation));
 			await Task.WhenAll(loadAudio, loadGif);
 			mGif = loadGif.Result;
+
 			IsLoadCompleted = true;
+			SetInfo("Cached", "Yes");
 			Duration = Math.Max(Duration, (mGif?.Duration / 1000f) ?? 2);
+			SetInfo("Duration", $"{Duration:0.00}s");
 
 		}
 	}

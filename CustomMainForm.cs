@@ -189,5 +189,37 @@ namespace HelloWorld
 		{ 			
 			txtLog.Text = Instance.log.ToString();
 		}
+
+		private void lbTransitions_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			var data = (lbTransitions.SelectedItem as TransitionData);			
+			chkEnabled.Checked = data?.Enabled ?? false;
+			lblDetails.Text = data?.Description ?? "";
+			pbPreview.ImageLocation = data?.Preview;
+			txtChance.Text = $"{data?.Count}";
+			layoutInfo.Visible = true;
+		}
+
+		private void chkEnabled_CheckedChanged(object sender, EventArgs e)
+		{
+			var data = (lbTransitions.SelectedItem as TransitionData);
+			if (data == null) return;
+			data.Enabled = (sender as CheckBox).Checked;
+			lbTransitions.Refresh();
+			lbTransitions.Invalidate();
+
+		}
+
+		private void txtChance_TextChanged(object sender, EventArgs e)
+		{
+			if(int.TryParse(txtChance.Text, out int chance) )
+			{
+				var data = (lbTransitions.SelectedItem as TransitionData);
+				if (data == null) return;
+				data.Count = chance;
+				lbTransitions.Refresh();
+				lbTransitions.Invalidate();
+			}
+		}
 	}
 }

@@ -38,7 +38,7 @@ namespace Transitions
 		}
 		public TransitionData GetNext()
 		{
-			var values = TransitionCache.Values.ToArray();
+			var values = TransitionCache.Values.Where(v=>v.Enabled).ToArray();
 			var max = values.Sum(kv => kv.Count);
 			var roll = rng.Next(0, max);
 			var rollLeft = roll;
@@ -85,11 +85,11 @@ namespace Transitions
 					int total = TransitionCache.Count();
 					while (current < TransitionCache.Count())
 					{
-						var toCache = TransitionCache.Skip(current).Take(6).ToList();
-						current += toCache.Count();
+						var toCache = TransitionCache.Skip(current).Take(2).ToList();
 						Task[] tasks = toCache.Select(tc => tc.Value.PreloadAsync()).ToArray();
 						await Task.WhenAll(tasks);
-						LoadProgress?.Invoke(this, new TransitionLibraryProgressEventArgs(++current, total, "Preloading"));
+						current += toCache.Count();
+						LoadProgress?.Invoke(this, new TransitionLibraryProgressEventArgs(current, total, "Preloading"));
 							
 					}
 				}

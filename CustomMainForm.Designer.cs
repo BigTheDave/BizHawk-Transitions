@@ -41,6 +41,13 @@
             this.btnTransitionSimple = new System.Windows.Forms.ToolStripButton();
             this.lblInfo = new System.Windows.Forms.ToolStripLabel();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.lblDetails = new System.Windows.Forms.Label();
+            this.layoutInfo = new System.Windows.Forms.FlowLayoutPanel();
+            this.pbPreview = new System.Windows.Forms.PictureBox();
+            this.chkEnabled = new System.Windows.Forms.CheckBox();
+            this.txtChance = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.toolStripContainer1.BottomToolStripPanel.SuspendLayout();
             this.toolStripContainer1.ContentPanel.SuspendLayout();
             this.toolStripContainer1.TopToolStripPanel.SuspendLayout();
@@ -50,6 +57,9 @@
             this.statusStrip1.SuspendLayout();
             this.tabLog.SuspendLayout();
             this.toolStrip1.SuspendLayout();
+            this.tableLayoutPanel1.SuspendLayout();
+            this.layoutInfo.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbPreview)).BeginInit();
             this.SuspendLayout();
             // 
             // txtLog
@@ -73,11 +83,11 @@
             // toolStripContainer1.ContentPanel
             // 
             this.toolStripContainer1.ContentPanel.Controls.Add(this.tabControl1);
-            this.toolStripContainer1.ContentPanel.Size = new System.Drawing.Size(380, 209);
+            this.toolStripContainer1.ContentPanel.Size = new System.Drawing.Size(530, 450);
             this.toolStripContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.toolStripContainer1.Location = new System.Drawing.Point(0, 0);
             this.toolStripContainer1.Name = "toolStripContainer1";
-            this.toolStripContainer1.Size = new System.Drawing.Size(380, 256);
+            this.toolStripContainer1.Size = new System.Drawing.Size(530, 497);
             this.toolStripContainer1.TabIndex = 1;
             this.toolStripContainer1.Text = "toolStripContainer1";
             // 
@@ -93,16 +103,16 @@
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(380, 209);
+            this.tabControl1.Size = new System.Drawing.Size(530, 450);
             this.tabControl1.TabIndex = 1;
             // 
             // tabTransitions
             // 
-            this.tabTransitions.Controls.Add(this.lbTransitions);
+            this.tabTransitions.Controls.Add(this.tableLayoutPanel1);
             this.tabTransitions.Location = new System.Drawing.Point(4, 22);
             this.tabTransitions.Name = "tabTransitions";
             this.tabTransitions.Padding = new System.Windows.Forms.Padding(3);
-            this.tabTransitions.Size = new System.Drawing.Size(372, 183);
+            this.tabTransitions.Size = new System.Drawing.Size(522, 424);
             this.tabTransitions.TabIndex = 0;
             this.tabTransitions.Text = "Transitions";
             this.tabTransitions.UseVisualStyleBackColor = true;
@@ -115,7 +125,7 @@
             this.lblStatus});
             this.statusStrip1.Location = new System.Drawing.Point(0, 0);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(380, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(530, 22);
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -141,9 +151,10 @@
             this.lbTransitions.FormattingEnabled = true;
             this.lbTransitions.Location = new System.Drawing.Point(3, 3);
             this.lbTransitions.Name = "lbTransitions";
-            this.lbTransitions.Size = new System.Drawing.Size(366, 177);
+            this.lbTransitions.Size = new System.Drawing.Size(252, 392);
             this.lbTransitions.TabIndex = 1;
-            this.lbTransitions.ValueMember = "Name";
+            this.lbTransitions.ValueMember = "DisplayString";
+            this.lbTransitions.SelectedIndexChanged += new System.EventHandler(this.lbTransitions_SelectedIndexChanged);
             // 
             // tabLog
             // 
@@ -191,11 +202,94 @@
             this.toolStripButton1.Text = "Clear Log";
             this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
             // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 2;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.Controls.Add(this.lbTransitions, 0, 0);
+            this.tableLayoutPanel1.Controls.Add(this.layoutInfo, 1, 0);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 2;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(516, 418);
+            this.tableLayoutPanel1.TabIndex = 2;
+            // 
+            // lblDetails
+            // 
+            this.lblDetails.AutoSize = true;
+            this.lblDetails.Dock = System.Windows.Forms.DockStyle.Top;
+            this.layoutInfo.SetFlowBreak(this.lblDetails, true);
+            this.lblDetails.Location = new System.Drawing.Point(3, 49);
+            this.lblDetails.Name = "lblDetails";
+            this.lblDetails.Size = new System.Drawing.Size(35, 13);
+            this.lblDetails.TabIndex = 2;
+            this.lblDetails.Text = "label1";
+            // 
+            // layoutInfo
+            // 
+            this.layoutInfo.Controls.Add(this.chkEnabled);
+            this.layoutInfo.Controls.Add(this.label1);
+            this.layoutInfo.Controls.Add(this.txtChance);
+            this.layoutInfo.Controls.Add(this.lblDetails);
+            this.layoutInfo.Controls.Add(this.pbPreview);
+            this.layoutInfo.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layoutInfo.Location = new System.Drawing.Point(261, 3);
+            this.layoutInfo.Name = "layoutInfo";
+            this.layoutInfo.Size = new System.Drawing.Size(252, 392);
+            this.layoutInfo.TabIndex = 2;
+            this.layoutInfo.Visible = false;
+            // 
+            // pbPreview
+            // 
+            this.layoutInfo.SetFlowBreak(this.pbPreview, true);
+            this.pbPreview.Location = new System.Drawing.Point(3, 258);
+            this.pbPreview.Name = "pbPreview";
+            this.pbPreview.Size = new System.Drawing.Size(200, 200);
+            this.pbPreview.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pbPreview.TabIndex = 3;
+            this.pbPreview.TabStop = false;
+            // 
+            // chkEnabled
+            // 
+            this.chkEnabled.AutoSize = true;
+            this.layoutInfo.SetFlowBreak(this.chkEnabled, true);
+            this.chkEnabled.Location = new System.Drawing.Point(3, 3);
+            this.chkEnabled.Name = "chkEnabled";
+            this.chkEnabled.Size = new System.Drawing.Size(65, 17);
+            this.chkEnabled.TabIndex = 4;
+            this.chkEnabled.Text = "Enabled";
+            this.chkEnabled.UseVisualStyleBackColor = true;
+            this.chkEnabled.CheckedChanged += new System.EventHandler(this.chkEnabled_CheckedChanged);
+            // 
+            // txtChance
+            // 
+            this.layoutInfo.SetFlowBreak(this.txtChance, true);
+            this.txtChance.Location = new System.Drawing.Point(53, 26);
+            this.txtChance.Name = "txtChance";
+            this.txtChance.Size = new System.Drawing.Size(100, 20);
+            this.txtChance.TabIndex = 5;
+            this.txtChance.Text = "0";
+            this.txtChance.WordWrap = false;
+            this.txtChance.TextChanged += new System.EventHandler(this.txtChance_TextChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(3, 23);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(44, 13);
+            this.label1.TabIndex = 6;
+            this.label1.Text = "Chance";
+            // 
             // CustomMainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(380, 256);
+            this.ClientSize = new System.Drawing.Size(530, 497);
             this.Controls.Add(this.toolStripContainer1);
             this.Name = "CustomMainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
@@ -217,6 +311,10 @@
             this.tabLog.PerformLayout();
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
+            this.tableLayoutPanel1.ResumeLayout(false);
+            this.layoutInfo.ResumeLayout(false);
+            this.layoutInfo.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbPreview)).EndInit();
             this.ResumeLayout(false);
 
 		}
@@ -236,5 +334,12 @@
 		private System.Windows.Forms.StatusStrip statusStrip1;
 		private System.Windows.Forms.ToolStripProgressBar pbLoading;
 		private System.Windows.Forms.ToolStripStatusLabel lblStatus;
+		private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+		private System.Windows.Forms.Label lblDetails;
+		private System.Windows.Forms.FlowLayoutPanel layoutInfo;
+		private System.Windows.Forms.PictureBox pbPreview;
+		private System.Windows.Forms.CheckBox chkEnabled;
+		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.TextBox txtChance;
 	}
 }

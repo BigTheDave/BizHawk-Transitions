@@ -30,7 +30,12 @@ namespace Transitions
 		}
 		private void ClearBackground(IGuiApi gui)
 		{
-			gui.DrawNew("native", true); 
+			gui.DrawNew("native", true);
+			gui.DrawFinish();
+		}
+		private void ClearForeground(IGuiApi gui)
+		{
+			gui.DrawNew("emu", true);
 			gui.DrawFinish();
 		}
 		public event EventHandler? TransitionCompleted;
@@ -75,9 +80,9 @@ namespace Transitions
 					for (double t = 0; t <= transition.Duration; t += deltaTime)
 					{
 						if (!IsPlaying) return;
-						ClearBackground(gui);
 						InvokeOnMainThread?.Invoke(this, () =>
 						{
+							ClearBackground(gui);
 							transition.DrawStart(gui);
 							try
 							{
@@ -110,9 +115,13 @@ namespace Transitions
 					CustomMainForm.Log("Transition Complete");
 					ClientApi.Unpause();
 					ClientApi.SetSoundOn(true);
-					transition.DrawClear(gui);
-					transition.Stop();
-					ClearBackground(gui);
+					InvokeOnMainThread?.Invoke(this, () =>
+					{
+						transition.DrawClear(gui);
+						transition.Stop();
+						ClearBackground(gui);
+						ClearForeground(gui);
+					});
 					IsPlaying = false;
 					TransitionCompleted?.Invoke(this, null);
 				}
